@@ -188,7 +188,7 @@
         let historicoVendas = [];
         let faturamentoTotal = 0;
 
-        // --- LOGIN INTEGRADO ---
+        // --- LOGIN INTEGRADO REVISADO PARA GITHUB PAGES ---
         async function realizarLogin() {
             const emailDigitado = document.getElementById('login-email').value.trim();
             const senhaDigitada = document.getElementById('login-senha').value.trim();
@@ -205,16 +205,22 @@
             erroTxt.classList.add('hidden');
 
             try {
+                // Ajustado cabeçalho de autorização padrão exigido pelo Baserow
                 const resposta = await fetch(`${API_URL}${TABELA_USUARIOS_ID}/?user_field_names=true`, {
                     method: 'GET',
-                    headers: { 'Authorization': `Token ${BASEROW_TOKEN}` }
+                    headers: { 
+                        'Authorization': `Token ${BASEROW_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
                 });
 
                 if (!resposta.ok) throw new Error("Erro ao conectar ao Baserow.");
 
                 const dados = await resposta.json();
+                
+                // Validação convertendo para minúsculo para evitar problemas de digitação
                 const usuarioValido = dados.results.find(user => 
-                    user.email === emailDigitado && String(user.senha) === senhaDigitada
+                    user.email.toLowerCase() === emailDigitado.toLowerCase() && String(user.senha) === senhaDigitada
                 );
 
                 if (usuarioValido) {
@@ -225,11 +231,11 @@
                     await sincronizarProdutos();
                     await sincronizarHistoricoVendas();
                 } else {
-                    mostrarErro("Usuário ou senha incorretos!");
+                    mostrarErro("Usuário ou senha incorretos! Verifique os dados cadastrados na tabela.");
                 }
             } catch (error) {
                 console.error(error);
-                mostrarErro("Falha na autenticação. Verifique sua conexão ou chaves da API.");
+                mostrarErro("Falha na autenticação. Verifique sua conexão, o e-mail digitado ou as chaves no código.");
             } finally {
                 btnLogin.disabled = false;
                 btnLogin.innerHTML = "Entrar";
