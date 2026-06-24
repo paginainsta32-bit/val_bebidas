@@ -490,11 +490,12 @@
                         'Authorization': `Token ${BASEROW_TOKEN}`,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        data_hora: dataHoraFormatada,
-                        itens_vendidos: listaItensStr.join(', '),
-                        valor_total: totalVenda
-                    })
+                 body: JSON.stringify({
+                     data_hora: dataHoraFormatada,
+                     itens_vendidos: listaItensStr.join(', '),
+                     valor_total: totalVenda,
+                     cliente: nomeCliente
+                 })
                 });
 
                 carrinho = {};
