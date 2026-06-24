@@ -1,0 +1,535 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Vendas - Bebidas (Baserow Live)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 font-sans text-gray-800">
+
+    <div id="tela-login" class="min-h-screen flex items-center justify-center bg-gray-900 px-4">
+        <div class="max-w-md w-full bg-white rounded-lg shadow-xl p-8">
+            <div class="text-center mb-6">
+                <img src="logo.jpg" alt="Logo" class="mx-auto h-24 w-auto rounded-full object-cover border-4 border-amber-500">
+                <h2 class="text-2xl font-bold text-gray-900 mt-4">Val das Bebidas</h2>
+                <p class="text-gray-500 text-sm">Controle de Estoque & Vendas Real-time</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">E-mail</label>
+                    <input type="email" id="login-email" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500" placeholder="seu@email.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Senha</label>
+                    <input type="password" id="login-senha" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500" placeholder="******">
+                </div>
+                <button onclick="realizarLogin()" id="btn-login" class="w-full bg-amber-500 text-white py-2 px-4 rounded-md font-medium hover:bg-amber-600 transition-colors flex justify-center items-center">
+                    <span>Entrar</span>
+                </button>
+                <p id="login-erro" class="text-red-500 text-sm text-center hidden"></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="sistema-principal" class="hidden min-h-screen flex flex-col">
+        <header class="bg-gray-900 text-white shadow-md">
+            <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <span class="text-xl font-bold text-amber-500 tracking-wider"><i class="fas fa-beer mr-2"></i>DEPÓSITO BEBIDAS</span>
+                </div>
+                <nav class="flex space-x-4">
+                    <button onclick="mudarAba('vendas')" id="nav-vendas" class="px-3 py-2 rounded-md text-sm font-medium bg-amber-500 text-white">Vendas (PDV)</button>
+                    <button onclick="mudarAba('controle')" id="nav-controle" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-800">Controle / Estoque</button>
+                    <button onclick="logout()" class="px-3 py-2 rounded-md text-sm font-medium text-red-400 hover:bg-gray-800"><i class="fas fa-sign-out-alt"></i></button>
+                </nav>
+            </div>
+        </header>
+
+        <main id="aba-vendas" class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="md:col-span-2 bg-white rounded-lg shadow p-6">
+                <div class="flex justify-between items-center mb-4 border-b pb-2">
+                    <h3 class="text-lg font-bold text-gray-900"><i class="fas fa-th-list mr-2 text-amber-500"></i>Selecione as Bebidas</h3>
+                    <button onclick="sincronizarProdutos()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded border flex items-center gap-1">
+                        <i class="fas fa-sync" id="icon-sync"></i> Atualizar Estoque
+                    </button>
+                </div>
+                <div id="grade-produtos" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6 flex flex-col h-fit sticky top-6">
+                <h3 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2"><i class="fas fa-shopping-cart mr-2 text-amber-500"></i>Pedido Atual</h3>
+                <div id="itens-carrinho" class="flex-1 space-y-3 overflow-y-auto max-h-64 mb-4">
+                    <p class="text-gray-400 text-center py-4 text-sm">Nenhum item selecionado</p>
+                </div>
+                <div class="border-t pt-4 space-y-2">
+                    <div class="flex justify-between text-xl font-bold text-gray-900">
+                        <span>Total:</span>
+                        <span id="total-pedido">R$ 0,00</span>
+                    </div>
+                    <button onclick="abrirPagamento()" id="btn-finalizar" disabled class="w-full bg-green-600 text-white py-3 px-4 rounded-md font-bold hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-center block mt-4">
+                        FINALIZAR VENDA
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <main id="aba-controle" class="hidden flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-sm text-gray-500 font-medium uppercase tracking-wider">Total Faturado</p>
+                            <h3 id="card-faturamento" class="text-2xl font-bold text-gray-900 mt-1">R$ 0,00</h3>
+                        </div>
+                        <div class="p-3 bg-green-100 rounded-full text-green-600"><i class="fas fa-dollar-sign text-xl"></i></div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-sm text-gray-500 font-medium uppercase tracking-wider">Vendas Realizadas</p>
+                            <h3 id="card-qtd-vendas" class="text-2xl font-bold text-gray-900 mt-1">0</h3>
+                        </div>
+                        <div class="p-3 bg-blue-100 rounded-full text-blue-600"><i class="fas fa-shopping-bag text-xl"></i></div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6 border-l-4 border-amber-500">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-sm text-gray-500 font-medium uppercase tracking-wider">Itens em Estoque Total</p>
+                            <h3 id="card-total-estoque" class="text-2xl font-bold text-gray-900 mt-1">0 und</h3>
+                        </div>
+                        <div class="p-3 bg-amber-100 rounded-full text-amber-600"><i class="fas fa-boxes text-xl"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow overflow-hidden">
+                <div class="px-6 py-4 border-b">
+                    <h3 class="text-lg font-bold text-gray-900">📦 Controle de Estoque Atualizado</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produto</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Preço Unitário</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Disponível</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-estoque" class="bg-white divide-y divide-gray-200">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow overflow-hidden">
+                <div class="px-6 py-4 border-b">
+                    <h3 class="text-lg font-bold text-gray-900">📜 Histórico de Vendas Gravado no Baserow</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data / Hora</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Itens Vendidos</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Valor Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-historico" class="bg-white divide-y divide-gray-200">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="modal-pagamento" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg max-w-sm w-full p-6 text-center shadow-2xl">
+            <h3 class="text-xl font-bold text-gray-900 mb-2">Pagamento via PIX</h3>
+            <p class="text-gray-500 text-sm mb-4">Apresente o QR Code para o cliente pagar.</p>
+            
+            <div class="text-2xl font-black text-green-600 my-3" id="modal-total-pagar">R$ 0,00</div>
+
+            <div class="bg-gray-100 p-4 rounded-lg my-4 flex justify-center items-center">
+                <img id="qrcode-pix" src="qrcode.png" alt="QR Code PIX" class="w-48 h-48 mx-auto shadow-md">
+            </div>
+
+            <div class="space-y-2 mt-6">
+                <button onclick="confirmarEncerramentoVenda()" id="btn-confirmar-venda" class="w-full bg-green-600 text-white py-3 rounded-md font-bold hover:bg-green-700 transition-colors flex items-center justify-center space-x-2">
+                    <i class="fas fa-check-circle"></i> <span id="txt-confirmar-venda">ENCERRAR (PIX CONFIRMADO)</span>
+                </button>
+                <button onclick="fecharModal()" class="w-full bg-gray-200 text-gray-700 py-2 rounded-md font-medium hover:bg-gray-300 transition-colors">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configurações Globais das Tabelas informadas
+        const BASEROW_TOKEN = '21WDS4cSz6izrJsEfUzRblsIdtj9DCF5';
+        const TABELA_USUARIOS_ID = '1933876';
+        const TABELA_PRODUTOS_ID = '1044126';
+        const TABELA_VENDAS_ID = '1044129';
+        const API_URL = 'https://api.baserow.io/api/database/rows/table/';
+
+        // Estados Locais
+        let produtos = [];
+        let carrinho = {};
+        let historicoVendas = [];
+        let faturamentoTotal = 0;
+
+        // --- LOGIN INTEGRADO ---
+        async function realizarLogin() {
+            const emailDigitado = document.getElementById('login-email').value.trim();
+            const senhaDigitada = document.getElementById('login-senha').value.trim();
+            const btnLogin = document.getElementById('btn-login');
+            const erroTxt = document.getElementById('login-erro');
+
+            if (!emailDigitado || !senhaDigitada) {
+                mostrarErro("Preencha todos os campos!");
+                return;
+            }
+
+            btnLogin.disabled = true;
+            btnLogin.innerHTML = `<i class="fas fa-spinner animate-spin mr-2"></i> Conectando...`;
+            erroTxt.classList.add('hidden');
+
+            try {
+                const resposta = await fetch(`${API_URL}${TABELA_USUARIOS_ID}/?user_field_names=true`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Token ${BASEROW_TOKEN}` }
+                });
+
+                if (!resposta.ok) throw new Error("Erro ao conectar ao Baserow.");
+
+                const dados = await resposta.json();
+                const usuarioValido = dados.results.find(user => 
+                    user.email === emailDigitado && String(user.senha) === senhaDigitada
+                );
+
+                if (usuarioValido) {
+                    document.getElementById('tela-login').classList.add('hidden');
+                    document.getElementById('sistema-principal').classList.remove('hidden');
+                    
+                    // Sincroniza dados iniciais das outras tabelas
+                    await sincronizarProdutos();
+                    await sincronizarHistoricoVendas();
+                } else {
+                    mostrarErro("Usuário ou senha incorretos!");
+                }
+            } catch (error) {
+                console.error(error);
+                mostrarErro("Falha na autenticação. Verifique sua conexão ou chaves da API.");
+            } finally {
+                btnLogin.disabled = false;
+                btnLogin.innerHTML = "Entrar";
+            }
+        }
+
+        function mostrarErro(mensagem) {
+            const erroTxt = document.getElementById('login-erro');
+            erroTxt.textContent = mensagem;
+            erroTxt.classList.remove('hidden');
+        }
+
+        function logout() {
+            document.getElementById('sistema-principal').classList.add('hidden');
+            document.getElementById('tela-login').classList.remove('hidden');
+            document.getElementById('login-senha').value = '';
+            carrinho = {};
+            atualizarCarrinho();
+        }
+
+        // --- BUSCAR PRODUTOS LIVE DO BASEROW ---
+        async function sincronizarProdutos() {
+            const icon = document.getElementById('icon-sync');
+            if(icon) icon.classList.add('animate-spin');
+
+            try {
+                const resposta = await fetch(`${API_URL}${TABELA_PRODUTOS_ID}/?user_field_names=true`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Token ${BASEROW_TOKEN}` }
+                });
+                if (!resposta.ok) throw new Error("Erro ao ler produtos.");
+                
+                const dados = await resposta.json();
+                
+                // Mapeia os dados do Baserow para o padrão do app
+                produtos = dados.results.map(item => ({
+                    row_id: item.id, // Guardamos o ID da linha para atualizar o estoque depois
+                    nome: item.nome,
+                    estoque: parseInt(item.estoque) || 0,
+                    preco: parseFloat(item.preco) || 0
+                }));
+
+                renderizarProdutos();
+                atualizarDashboardInfo();
+            } catch (error) {
+                console.error(error);
+                alert("Erro ao buscar produtos no Baserow.");
+            } finally {
+                if(icon) icon.classList.remove('animate-spin');
+            }
+        }
+
+        // --- BUSCAR HISTÓRICO LIVE DO BASEROW ---
+        async function sincronizarHistoricoVendas() {
+            try {
+                const resposta = await fetch(`${API_URL}${TABELA_VENDAS_ID}/?user_field_names=true`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Token ${BASEROW_TOKEN}` }
+                });
+                if (!resposta.ok) throw new Error("Erro ao ler histórico.");
+                
+                const dados = await resposta.json();
+                
+                faturamentoTotal = 0;
+                historicoVendas = dados.results.map(venda => {
+                    const total = parseFloat(venda.valor_total) || 0;
+                    faturamentoTotal += total;
+                    return {
+                        data_hora: venda.data_hora,
+                        itens: venda.itens_vendidos,
+                        total: total
+                    };
+                });
+
+                atualizarDashboardInfo();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // --- SISTEMA DE ABAS ---
+        function mudarAba(aba) {
+            const btnVendas = document.getElementById('nav-vendas');
+            const btnControle = document.getElementById('nav-controle');
+            const abaVendas = document.getElementById('aba-vendas');
+            const abaControle = document.getElementById('aba-controle');
+
+            if (aba === 'vendas') {
+                abaVendas.classList.remove('hidden');
+                abaControle.classList.add('hidden');
+                btnVendas.className = "px-3 py-2 rounded-md text-sm font-medium bg-amber-500 text-white";
+                btnControle.className = "px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-800";
+            } else {
+                abaVendas.classList.add('hidden');
+                abaControle.classList.remove('hidden');
+                btnVendas.className = "px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-800";
+                btnControle.className = "px-3 py-2 rounded-md text-sm font-medium bg-amber-500 text-white";
+                atualizarDashboardInfo();
+            }
+        }
+
+        // --- MOTOR DE VENDAS (PDV) ---
+        function renderizarProdutos() {
+            const container = document.getElementById('grade-produtos');
+            container.innerHTML = '';
+
+            produtos.forEach((prod, index) => {
+                const esgotado = prod.estoque <= 0;
+                container.innerHTML += `
+                    <div class="border rounded-lg p-4 flex flex-col justify-between ${esgotado ? 'bg-gray-50 opacity-60' : 'bg-white shadow-sm hover:shadow-md transition-shadow'}">
+                        <div>
+                            <h4 class="font-bold text-gray-800 text-base">${prod.nome}</h4>
+                            <p class="text-amber-600 font-extrabold text-lg mt-1">R$ ${prod.preco.toFixed(2)}</p>
+                            <p class="text-xs text-gray-500 mt-1">Estoque: <span class="font-bold">${prod.estoque} und</span></p>
+                        </div>
+                        <div class="mt-4 flex items-center space-x-2">
+                            <input type="number" id="qtd-${index}" value="1" min="1" max="${prod.estoque}" ${esgotado ? 'disabled' : ''} class="w-16 px-2 py-1 border rounded text-center focus:outline-amber-500">
+                            <button onclick="adicionarAoCarrinho(${index})" ${esgotado ? 'disabled' : ''} class="flex-1 bg-amber-500 text-white text-xs font-bold py-2 rounded uppercase hover:bg-amber-600 transition-colors disabled:bg-gray-300">
+                                ${esgotado ? 'Esgotado' : 'Adicionar'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function adicionarAoCarrinho(index) {
+            const produto = produtos[index];
+            const qtdInput = document.getElementById(`qtd-${index}`);
+            const quantidade = parseInt(qtdInput.value);
+
+            if (isNaN(quantidade) || quantidade <= 0) return;
+            if (quantidade > produto.estoque) {
+                alert(`Estoque insuficiente! Apenas ${produto.estoque} disponíveis.`);
+                return;
+            }
+
+            if (carrinho[index]) {
+                if ((carrinho[index].quantidade + quantity) > produto.estoque) {
+                    alert(`Limite do estoque atingido para o carrinho.`);
+                    return;
+                }
+                carrinho[index].quantidade += quantidade;
+            } else {
+                carrinho[index] = {
+                    row_id: produto.row_id,
+                    nome: produto.nome,
+                    preco: produto.preco,
+                    quantidade: quantidade
+                };
+            }
+
+            qtdInput.value = 1;
+            atualizarCarrinho();
+        }
+
+        function removerDoCarrinho(index) {
+            delete carrinho[index];
+            atualizarCarrinho();
+        }
+
+        function atualizarCarrinho() {
+            const container = document.getElementById('itens-carrinho');
+            const btnFinalizar = document.getElementById('btn-finalizar');
+            const totalTxt = document.getElementById('total-pedido');
+            
+            container.innerHTML = '';
+            let total = 0;
+            let temItens = false;
+
+            for (let index in carrinho) {
+                temItens = true;
+                const item = carrinho[index];
+                const subtotal = item.preco * item.quantidade;
+                total += subtotal;
+
+                container.innerHTML += `
+                    <div class="flex justify-between items-center bg-gray-50 p-2 rounded border">
+                        <div class="flex-1 min-w-0 pr-2">
+                            <p class="text-sm font-semibold text-gray-800 truncate">${item.nome}</p>
+                            <p class="text-xs text-gray-500">${item.quantidade}x R$ ${item.preco.toFixed(2)}</p>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span class="text-sm font-bold text-gray-900">R$ ${subtotal.toFixed(2)}</span>
+                            <button onclick="removerDoCarrinho(${index})" class="text-red-500 hover:text-red-700 text-sm"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (!temItens) {
+                container.innerHTML = `<p class="text-gray-400 text-center py-4 text-sm">Nenhum item selecionado</p>`;
+                btnFinalizar.disabled = true;
+            } else {
+                btnFinalizar.disabled = false;
+            }
+
+            totalTxt.textContent = `R$ ${total.toFixed(2)}`;
+        }
+
+        function abrirPagamento() {
+            let total = 0;
+            for (let idx in carrinho) {
+                total += carrinho[idx].preco * carrinho[idx].quantidade;
+            }
+            document.getElementById('modal-total-pagar').textContent = `R$ ${total.toFixed(2)}`;
+            document.getElementById('modal-pagamento').classList.remove('hidden');
+        }
+
+        function fecharModal() {
+            document.getElementById('modal-pagamento').classList.add('hidden');
+        }
+
+        // --- SALVAR VENDA E ABATER ESTOQUE REAL NO BASEROW ---
+        async function confirmarEncerramentoVenda() {
+            const btn = document.getElementById('btn-confirmar-venda');
+            const txt = document.getElementById('txt-confirmar-venda');
+            
+            btn.disabled = true;
+            txt.textContent = "PROCESSANDO E SALVANDO...";
+
+            let totalVenda = 0;
+            let listaItensStr = [];
+
+            try {
+                // 1. Atualizar o estoque de cada produto no Baserow (Via PATCH HTTP)
+                for (let index in carrinho) {
+                    const item = carrinho[index];
+                    totalVenda += item.preco * item.quantidade;
+                    listaItensStr.push(`${item.quantidade}x ${item.nome}`);
+
+                    const prodLocal = produtos.find(p => p.row_id === item.row_id);
+                    const novoEstoque = prodLocal.estoque - item.quantidade;
+
+                    await fetch(`${API_URL}${TABELA_PRODUTOS_ID}/${item.row_id}/?user_field_names=true`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Authorization': `Token ${BASEROW_TOKEN}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ estoque: novoEstoque })
+                    });
+                }
+
+                // 2. Registrar a Venda na Tabela de Histórico (Via POST HTTP)
+                const agora = new Date();
+                const dataHoraFormatada = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+
+                await fetch(`${API_URL}${TABELA_VENDAS_ID}/?user_field_names=true`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Token ${BASEROW_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        data_hora: dataHoraFormatada,
+                        itens_vendidos: listaItensStr.join(', '),
+                        valor_total: totalVenda
+                    })
+                });
+
+                carrinho = {};
+                atualizarCarrinho();
+                fecharModal();
+                alert("Venda registrada e salva no Baserow com sucesso!");
+                
+                await sincronizarProdutos();
+                await sincronizarHistoricoVendas();
+
+            } catch (error) {
+                console.error(error);
+                alert("Ocorreu um erro ao sincronizar com o banco de dados. Verifique o painel.");
+            } finally {
+                btn.disabled = false;
+                txt.textContent = "ENCERRAR (PIX CONFIRMADO)";
+            }
+        }
+
+        // --- ATUALIZAÇÃO DO PAINEL DE CONTROLE ---
+        function atualizarDashboardInfo() {
+            document.getElementById('card-faturamento').textContent = `R$ ${faturamentoTotal.toFixed(2)}`;
+            document.getElementById('card-qtd-vendas').textContent = historicoVendas.length;
+            
+            let totalItensDisponiveis = produtos.reduce((acc, p) => acc + p.estoque, 0);
+            document.getElementById('card-total-estoque').textContent = `${totalItensDisponiveis} und`;
+
+            const tabelaEstoque = document.getElementById('tabela-estoque');
+            tabelaEstoque.innerHTML = '';
+            produtos.forEach(p => {
+                let badge = '';
+                if(p.estoque === 0) badge = `<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Esgotado</span>`;
+                else if(p.estoque <= 5) badge = `<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800">Baixo</span>`;
+                else badge = `<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">OK</span>`;
+
+                tabelaEstoque.innerHTML += `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${p.nome}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">R$ ${p.preco.toFixed(2)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center font-bold text-gray-900">${p.estoque}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center">${badge}</td>
+                    </tr>
+                `;
+            });
+
+            const tabelaHist = document.getElementById('tabela-historico');
+            if (historicoVendas.length === 0) {
+                tabelaHist.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center text-gray-400 text
