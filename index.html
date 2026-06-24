@@ -9,11 +9,9 @@
 </head>
 <body class="bg-gray-100 font-sans text-gray-800">
 
-    <!-- 1. TELA DE LOGIN -->
     <div id="tela-login" class="min-h-screen flex items-center justify-center bg-gray-900 px-4">
         <div class="max-w-md w-full bg-white rounded-lg shadow-xl p-8">
             <div class="text-center mb-6">
-                <!-- Ajustado para logo.png -->
                 <img src="logo.png" alt="Logo" class="mx-auto h-50 w-auto rounded-full object-cover border-4 border-amber-500">
                 <h2 class="text-2xl font-bold text-gray-900 mt-4">Val das Bebidas</h2>
                 <p class="text-gray-500 text-sm">Controle de Estoque & Vendas Real-time</p>
@@ -35,7 +33,6 @@
         </div>
     </div>
 
-    <!-- RECIPIENTE DO SISTEMA PRINCIPAL -->
     <div id="sistema-principal" class="hidden min-h-screen flex flex-col">
         <header class="bg-gray-900 text-white shadow-md">
             <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
@@ -131,12 +128,13 @@
             </div>
 
             <div class="bg-white rounded-lg shadow overflow-hidden">
-                <div class="px-6 py-4 border-b">
+                <div class="px-6 py-4 border-b flex justify-between items-center">
                     <h3 class="text-lg font-bold text-gray-900">📜 Histórico de Vendas Gravado no Baserow</h3>
+                    <span class="text-xs text-gray-400 font-medium bg-gray-100 px-2 py-1 rounded"><i class="fas fa-info-circle mr-1"></i>Clique em uma linha para ver a comanda detalhada</span>
                 </div>
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto max-h-96 overflow-y-auto">
                     <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                        <thead class="bg-gray-50 sticky top-0 z-10 shadow-sm">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data / Hora</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
@@ -160,7 +158,6 @@
             <div class="text-2xl font-black text-green-600 my-3" id="modal-total-pagar">R$ 0,00</div>
 
             <div class="bg-gray-100 p-4 rounded-lg my-4 flex justify-center items-center">
-                <!-- Ajustado para qrcode.png -->
                 <img id="qrcode-pix" src="qrcode.png" alt="QR Code PIX" class="w-48 h-48 mx-auto shadow-md">
             </div>
 
@@ -168,7 +165,6 @@
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     Nome do Cliente
                 </label>
-
                 <input
                     type="text"
                     id="cliente-nome"
@@ -188,21 +184,56 @@
         </div>
     </div>
 
+    <div id="modal-comanda" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg max-w-md w-full shadow-2xl overflow-hidden border border-gray-200">
+            <div class="bg-gray-900 text-white px-6 py-4 flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-file-invoice text-amber-500 text-xl"></i>
+                    <h3 class="text-lg font-bold tracking-wide">Comanda do Cliente</h3>
+                </div>
+                <button onclick="fecharModalComanda()" class="text-gray-400 hover:text-white transition-colors text-xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <div class="border-b border-dashed pb-3 text-sm space-y-1 text-gray-600">
+                    <div class="flex justify-between">
+                        <span><strong>Cliente:</strong></span>
+                        <span id="comanda-cliente-nome" class="text-gray-900 font-semibold"></span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span><strong>Data / Hora:</strong></span>
+                        <span id="comanda-data-hora" class="text-gray-900"></span>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-xs uppercase font-bold tracking-wider text-gray-400 mb-2">Itens Consumidos</h4>
+                    <div id="comanda-lista-itens" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                        </div>
+                </div>
+
+                <div class="border-t border-dashed pt-4 flex justify-between items-center bg-amber-50 -mx-6 -mb-6 p-6 mt-4">
+                    <span class="text-gray-700 font-bold uppercase tracking-wide text-sm">Valor Total Pago</span>
+                    <span id="comanda-total" class="text-2xl font-black text-amber-600"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Configurações Globais das Tabelas informadas
         const BASEROW_TOKEN = '21WDS4cSz6izrJsEfUzRblsIdtj9DCF5';
         const TABELA_USUARIOS_ID = '986198';
         const TABELA_PRODUTOS_ID = '1044126';
         const TABELA_VENDAS_ID = '1044129';
         const API_URL = 'https://api.baserow.io/api/database/rows/table/';
 
-        // Estados Locais
         let produtos = [];
         let carrinho = {};
         let historicoVendas = [];
         let faturamentoTotal = 0;
 
-        // --- LOGIN INTEGRADO REVISADO PARA GITHUB PAGES ---
         async function realizarLogin() {
             const emailDigitado = document.getElementById('login-email').value.trim();
             const senhaDigitada = document.getElementById('login-senha').value.trim();
@@ -219,7 +250,6 @@
             erroTxt.classList.add('hidden');
 
             try {
-                // Ajustado cabeçalho de autorização padrão exigido pelo Baserow
                 const resposta = await fetch(`${API_URL}${TABELA_USUARIOS_ID}/?user_field_names=true`, {
                     method: 'GET',
                     headers: { 
@@ -232,7 +262,6 @@
 
                 const dados = await resposta.json();
                 
-                // Validação convertendo para minúsculo para evitar problemas de digitação
                 const usuarioValido = dados.results.find(user => 
                     user.email.toLowerCase() === emailDigitado.toLowerCase() && String(user.senha) === senhaDigitada
                 );
@@ -241,15 +270,14 @@
                     document.getElementById('tela-login').classList.add('hidden');
                     document.getElementById('sistema-principal').classList.remove('hidden');
                     
-                    // Sincroniza dados iniciais das outras tabelas
                     await sincronizarProdutos();
                     await sincronizarHistoricoVendas();
                 } else {
-                    mostrarErro("Usuário ou senha incorretos! Verifique os dados cadastrados na tabela.");
+                    mostrarErro("Usuário ou senha incorretos!");
                 }
             } catch (error) {
                 console.error(error);
-                mostrarErro("Falha na autenticação. Verifique sua conexão, o e-mail digitado ou as chaves no código.");
+                mostrarErro("Falha na autenticação.");
             } finally {
                 btnLogin.disabled = false;
                 btnLogin.innerHTML = "Entrar";
@@ -258,7 +286,7 @@
 
         function mostrarErro(mensagem) {
             const erroTxt = document.getElementById('login-erro');
-            erroTxt.textContent = message;
+            erroTxt.textContent = mensagem;
             erroTxt.classList.remove('hidden');
         }
 
@@ -270,7 +298,6 @@
             atualizarCarrinho();
         }
 
-        // --- BUSCAR PRODUTOS LIVE DO BASEROW ---
         async function sincronizarProdutos() {
             const icon = document.getElementById('icon-sync');
             if(icon) icon.classList.add('animate-spin');
@@ -284,9 +311,8 @@
                 
                 const dados = await resposta.json();
                 
-                // Mapeia os dados do Baserow para o padrão do app
                 produtos = dados.results.map(item => ({
-                    row_id: item.id, // Guardamos o ID da linha para atualizar o estoque depois
+                    row_id: item.id,
                     nome: item.nome,
                     estoque: parseInt(item.estoque) || 0,
                     preco: parseFloat(item.preco) || 0
@@ -302,7 +328,6 @@
             }
         }
 
-        // --- BUSCAR HISTÓRICO LIVE DO BASEROW ---
         async function sincronizarHistoricoVendas() {
             try {
                 const resposta = await fetch(`${API_URL}${TABELA_VENDAS_ID}/?user_field_names=true`, {
@@ -331,7 +356,6 @@
             }
         }
 
-        // --- SISTEMA DE ABAS ---
         function mudarAba(aba) {
             const btnVendas = document.getElementById('nav-vendas');
             const btnControle = document.getElementById('nav-controle');
@@ -352,7 +376,6 @@
             }
         }
 
-        // --- MOTOR DE VENDAS (PDV) ---
         function renderizarProdutos() {
             const container = document.getElementById('grade-produtos');
             container.innerHTML = '';
@@ -464,7 +487,7 @@
             document.getElementById('modal-pagamento').classList.add('hidden');
         }
 
-        // --- SALVAR VENDA E ABATER ESTOQUE REAL NO BASEROW ---
+        // --- ENERGAR/SALVAR VENDA ---
         async function confirmarEncerramentoVenda() {
             const btn = document.getElementById('btn-confirmar-venda');
             const txt = document.getElementById('txt-confirmar-venda');
@@ -477,7 +500,6 @@
             const nomeCliente = document.getElementById('cliente-nome').value.trim() || "Não informado";
 
             try {
-                // 1. Atualizar o estoque de cada produto no Baserow (Via PATCH HTTP)
                 for (let index in carrinho) {
                     const item = carrinho[index];
                     totalVenda += item.preco * item.quantidade;
@@ -496,7 +518,6 @@
                     });
                 }
 
-                // 2. Registrar a Venda na Tabela de Histórico (Via POST HTTP)
                 const agora = new Date();
                 const dataHoraFormatada = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
 
@@ -525,11 +546,43 @@
 
             } catch (error) {
                 console.error(error);
-                alert("Ocorreu um erro ao sincronizar com o banco de dados. Verifique o painel.");
+                alert("Ocorreu um erro ao sincronizar com o banco de dados.");
             } finally {
                 btn.disabled = false;
                 txt.textContent = "ENCERRAR (PIX CONFIRMADO)";
             }
+        }
+
+        // --- SISTEMA DA COMANDA EXPANDIDA (ABRIR / FECHAR) ---
+        function abrirComandaDetalhada(index) {
+            const venda = historicoVendas[index];
+            if (!venda) return;
+
+            document.getElementById('comanda-cliente-nome').textContent = venda.cliente;
+            document.getElementById('comanda-data-hora').textContent = venda.data_hora;
+            document.getElementById('comanda-total').textContent = `R$ ${venda.total.toFixed(2)}`;
+
+            const containerItens = document.getElementById('comanda-lista-itens');
+            containerItens.innerHTML = '';
+
+            // Divide a string longa salva no Baserow separando por vírgula para listar cada item de forma organizada abaixo
+            const arrayItens = venda.itens.split(',');
+
+            arrayItens.forEach(itemStr => {
+                if (itemStr.trim() === "") return;
+                containerItens.innerHTML += `
+                    <div class="flex justify-between text-sm bg-gray-50 border border-gray-100 px-3 py-2 rounded-md">
+                        <span class="text-gray-800 font-medium">${itemStr.trim()}</span>
+                        <span class="text-gray-400 text-xs flex items-center"><i class="fas fa-check text-green-500 mr-1"></i> Entregue</span>
+                    </div>
+                `;
+            });
+
+            document.getElementById('modal-comanda').classList.remove('hidden');
+        }
+
+        function fecharModalComanda() {
+            document.getElementById('modal-comanda').classList.add('hidden');
         }
 
         // --- ATUALIZAÇÃO DO PAINEL DE CONTROLE ---
@@ -563,11 +616,12 @@
                 tabelaHist.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-gray-400 text-sm">Nenhuma venda gravada ainda.</td></tr>`;
             } else {
                 tabelaHist.innerHTML = '';
-                historicoVendas.forEach(v => {
+                // Passa o índice (idx) para identificar qual comanda o usuário quer visualizar no clique
+                historicoVendas.forEach((v, idx) => {
                     tabelaHist.innerHTML += `
-                        <tr>
+                        <tr onclick="abrirComandaDetalhada(${idx})" class="hover:bg-amber-50 cursor-pointer border-b transition-colors" title="Clique para abrir comanda completa">
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-bold">${v.data_hora}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">${v.cliente}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium"><i class="fas fa-receipt mr-1.5 text-amber-500 text-xs"></i>${v.cliente}</td>
                             <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">${v.itens}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-center font-bold text-green-600">R$ ${v.total.toFixed(2)}</td>
                         </tr>
