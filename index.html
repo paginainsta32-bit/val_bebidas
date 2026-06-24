@@ -9,9 +9,11 @@
 </head>
 <body class="bg-gray-100 font-sans text-gray-800">
 
+    <!-- 1. TELA DE LOGIN -->
     <div id="tela-login" class="min-h-screen flex items-center justify-center bg-gray-900 px-4">
         <div class="max-w-md w-full bg-white rounded-lg shadow-xl p-8">
             <div class="text-center mb-6">
+                <!-- Ajustado para logo.png -->
                 <img src="logo.png" alt="Logo" class="mx-auto h-50 w-auto rounded-full object-cover border-4 border-amber-500">
                 <h2 class="text-2xl font-bold text-gray-900 mt-4">Val das Bebidas</h2>
                 <p class="text-gray-500 text-sm">Controle de Estoque & Vendas Real-time</p>
@@ -33,6 +35,7 @@
         </div>
     </div>
 
+    <!-- RECIPIENTE DO SISTEMA PRINCIPAL -->
     <div id="sistema-principal" class="hidden min-h-screen flex flex-col">
         <header class="bg-gray-900 text-white shadow-md">
             <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
@@ -136,6 +139,7 @@
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data / Hora</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Itens Vendidos</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Valor Total</th>
                             </tr>
@@ -156,6 +160,7 @@
             <div class="text-2xl font-black text-green-600 my-3" id="modal-total-pagar">R$ 0,00</div>
 
             <div class="bg-gray-100 p-4 rounded-lg my-4 flex justify-center items-center">
+                <!-- Ajustado para qrcode.png -->
                 <img id="qrcode-pix" src="qrcode.png" alt="QR Code PIX" class="w-48 h-48 mx-auto shadow-md">
             </div>
 
@@ -227,7 +232,7 @@
 
                 const dados = await resposta.json();
                 
-                // Validação convertendo para minúsculo para evitar problemas di digitação
+                // Validação convertendo para minúsculo para evitar problemas de digitação
                 const usuarioValido = dados.results.find(user => 
                     user.email.toLowerCase() === emailDigitado.toLowerCase() && String(user.senha) === senhaDigitada
                 );
@@ -253,7 +258,7 @@
 
         function mostrarErro(mensagem) {
             const erroTxt = document.getElementById('login-erro');
-            erroTxt.textContent = mensagem;
+            erroTxt.textContent = message;
             erroTxt.classList.remove('hidden');
         }
 
@@ -314,6 +319,7 @@
                     faturamentoTotal += total;
                     return {
                         data_hora: venda.data_hora,
+                        cliente: venda.cliente || "Não informado",
                         itens: venda.itens_vendidos,
                         total: total
                     };
@@ -554,13 +560,14 @@
 
             const tabelaHist = document.getElementById('tabela-historico');
             if (historicoVendas.length === 0) {
-                tabelaHist.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center text-gray-400 text-sm">Nenhuma venda gravada ainda.</td></tr>`;
+                tabelaHist.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-gray-400 text-sm">Nenhuma venda gravada ainda.</td></tr>`;
             } else {
                 tabelaHist.innerHTML = '';
                 historicoVendas.forEach(v => {
                     tabelaHist.innerHTML += `
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-bold">${v.data_hora}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">${v.cliente}</td>
                             <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">${v.itens}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-center font-bold text-green-600">R$ ${v.total.toFixed(2)}</td>
                         </tr>
